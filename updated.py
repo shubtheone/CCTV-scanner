@@ -41,25 +41,33 @@ STAGE2_CONCURRENCY = 1000
 UDP_CONCURRENCY = 500
 BATCH_SIZE = 512             # Larger batches
 
+# Timeout configuration (will be set adaptively based on network size)
+QUICK_CONNECT_TIMEOUT = 2.0
+DEEP_CONNECT_TIMEOUT = 4.0
+QUICK_READ_TIMEOUT = 2.0
+DEEP_READ_TIMEOUT = 4.0
+UDP_TIMEOUT = 2.0
+
 # Adaptive timeouts based on network size
-def get_adaptive_timeouts(num_targets: int) -> Tuple[float, float, float, float]:
+def get_adaptive_timeouts(num_targets: int) -> Tuple[float, float, float, float, float]:
     """
     Adjust timeouts based on network size to prevent missing cameras
     Small networks: fast timeouts
     Large networks: more reliable timeouts
+    Returns: (quick_connect, deep_connect, quick_read, deep_read, udp_timeout)
     """
     if num_targets <= 10:
         # Very small - balanced (not too aggressive)
-        return 2.0, 4.0, 2.0, 4.0
+        return 2.0, 4.0, 2.0, 4.0, 2.0
     elif num_targets <= 100:
         # Small - reliable
-        return 2.5, 5.0, 2.5, 5.0
+        return 2.5, 5.0, 2.5, 5.0, 2.5
     elif num_targets <= 1000:
         # Medium - very reliable
-        return 3.0, 5.0, 3.0, 5.0
+        return 3.0, 5.0, 3.0, 5.0, 3.0
     else:
         # Large - maximum reliability
-        return 3.5, 6.0, 3.5, 6.0
+        return 3.5, 6.0, 3.5, 6.0, 3.5
 
 # Adaptive retry (reduce for dead networks)
 MAX_RETRIES = 1              # Reduced from 2
@@ -769,14 +777,15 @@ async def main(args):
         return
     
     # Get adaptive timeouts based on network size
-    quick_timeout, deep_timeout, read_timeout, deep_read = get_adaptive_timeouts(len(targets))
+    quick_timeout, deep_timeout, read_timeout, deep_read, udp_timeout = get_adaptive_timeouts(len(targets))
     
     # Override global timeout values for this scan
-    global QUICK_CONNECT_TIMEOUT, DEEP_CONNECT_TIMEOUT, QUICK_READ_TIMEOUT, DEEP_READ_TIMEOUT
+    global QUICK_CONNECT_TIMEOUT, DEEP_CONNECT_TIMEOUT, QUICK_READ_TIMEOUT, DEEP_READ_TIMEOUT, UDP_TIMEOUT
     QUICK_CONNECT_TIMEOUT = quick_timeout
     DEEP_CONNECT_TIMEOUT = deep_timeout
     QUICK_READ_TIMEOUT = read_timeout
     DEEP_READ_TIMEOUT = deep_read
+    UDP_TIMEOUT = udp_timeout
     
     print(f"\n{'='*70}")
     print(f"CCTV SCANNER - High Performance Mode")
