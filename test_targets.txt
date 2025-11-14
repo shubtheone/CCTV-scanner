@@ -1,0 +1,2 @@
+# Test file with CIDR block
+192.168.1.0/28
