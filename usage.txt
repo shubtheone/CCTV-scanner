@@ -1,1 +1,0 @@
-python3 2.py ../mm.txt --slow --verbose -o test.json
